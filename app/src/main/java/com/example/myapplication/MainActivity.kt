@@ -78,6 +78,7 @@ import kotlinx.coroutines.delay
 val SkyBlue = Color(0xFF448AFF)
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
