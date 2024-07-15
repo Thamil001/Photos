@@ -147,7 +147,7 @@ fun TopBarIntegrated() {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.TopStart
             ) {
                 PreviewImageGrid()
             }
