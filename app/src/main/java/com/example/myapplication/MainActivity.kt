@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -75,7 +76,7 @@ import com.example.myapplication.util.getImageUriFromPath
 import com.example.myapplication.util.toast
 import kotlinx.coroutines.delay
 
-val SkyBlue = Color(0xFF448AFF)
+//val SkyBlue = Color(0xFF448AFF)
 
 class MainActivity : ComponentActivity() {
 
@@ -130,16 +131,17 @@ fun AppMain() {
 fun TopBarIntegrated() {
     val customH4TextStyle = TextStyle(
         fontSize = 25.sp,
-        fontWeight = FontWeight.Thin,
+        fontWeight = FontWeight.Normal,
     )
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Photos", color = SkyBlue, style = customH4TextStyle) },
+                title = { Text("Photos", color = MaterialTheme.colorScheme.primary, style = customH4TextStyle) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = Color.Transparent
                 )
+                
             )
         },
         content = { innerPadding ->
@@ -193,7 +195,7 @@ fun TypewriterAnimation() {
     LaunchedEffect(Unit) {
         val text = "Photos"
         for (i in text.indices) {
-            delay(10) // Adjust delay as needed for the speed of typing
+            delay(10)
             visibleText = text.substring(0, i + 1)
         }
     }
@@ -206,7 +208,7 @@ fun TypewriterAnimation() {
     ) {
         Text(
             text = visibleText,
-            color = SkyBlue,
+            color = MaterialTheme.colorScheme.primary,
             style = customH4TextStyle
         )
     }
