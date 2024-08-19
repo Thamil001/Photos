@@ -10,7 +10,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -494,9 +493,10 @@ fun ZoomableAsyncImage(imageUrl: String, contentDescription: String?) {
     val minScale = 1f
     val maxScale = 4f
     val context = LocalContext.current
+
+
     val zoomDampingFactor = 0.5f
-    var targetScale by remember { mutableFloatStateOf(1f) }
-    val animatedScale by animateFloatAsState(targetValue = targetScale, label = "")
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -517,19 +517,9 @@ fun ZoomableAsyncImage(imageUrl: String, contentDescription: String?) {
                     )
                 }
             }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        targetScale = if (targetScale > 1f) 1f else 2f
-                        scale = targetScale
-                        offsetX = 0f
-                        offsetY = 0f
-                    }
-                )
-            }
             .graphicsLayer(
-                scaleX = animatedScale,
-                scaleY = animatedScale,
+                scaleX = scale,
+                scaleY = scale,
                 translationX = offsetX,
                 translationY = offsetY
             )
@@ -545,8 +535,3 @@ fun ZoomableAsyncImage(imageUrl: String, contentDescription: String?) {
         )
     }
 }
-
-
-
-
-
