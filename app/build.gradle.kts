@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.firebase.inappmessaging.ktx)
+    implementation(libs.voyager.navigator)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

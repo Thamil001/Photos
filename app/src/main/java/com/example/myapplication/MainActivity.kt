@@ -5,16 +5,17 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,12 +23,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -41,7 +43,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -49,7 +50,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +67,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.myapplication.ui.theme.MyApplicationTheme
@@ -92,16 +96,7 @@ class MainActivity : ComponentActivity() {
 
     private fun setUi() {
         setContent {
-            MyApplicationTheme {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .displayCutoutPadding(),
-                ) {
-                    AppMain()
-                }
-            }
-
+            AppMain()
         }
     }
 
@@ -126,52 +121,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppMain() {
-    TopBarIntegrated()
-}
-
-//Top bar integrated
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBarIntegrated() {
-    val customH4TextStyle = TextStyle(
-        fontSize = 25.sp,
-        fontWeight = FontWeight.Normal,
-    )
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Photos",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = customH4TextStyle
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = Color.Transparent
-                )
-
-            )
-        },
-        content = { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.TopStart
-            ) {
-                PreviewImageGrid()
-            }
-        }
-    )
-}
-
-//loading page
-@Composable
-fun PreviewImageGrid() {
-    var isLoading by remember { mutableStateOf(true) }
     val images = remember { mutableStateListOf<Image>() }
+    var isLoading by remember { mutableStateOf(true) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -188,8 +139,50 @@ fun PreviewImageGrid() {
         ) {
             TypewriterAnimation()
         }
-    else
-        ImageGrid(imageList = images)
+    else Navigator(TopBarIntegrated(images))
+}
+
+class TopBarIntegrated(private val images: List<Image>) : Screen {
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    override fun Content() {
+        val customH4TextStyle = TextStyle(
+            fontSize = 25.sp,
+            fontWeight = FontWeight.Normal,
+        )
+        MyApplicationTheme {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Photos",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = customH4TextStyle
+                            )
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            titleContentColor = Color.Transparent
+                        )
+
+                    )
+                },
+                content = { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        contentAlignment = Alignment.TopStart
+                    ) {
+                        ImageGrid(images)
+                    }
+                }
+            )
+        }
+    }
+
 }
 
 //Animation for LauncherEffect
@@ -237,13 +230,13 @@ fun ImageGrid(imageList: List<Image>) {
 
 }
 
+
 // align the all items in gridview
 @Composable
 fun GridItem(image: Image, index: Int, imageList: List<Image>) {
-    var isFullScreen by remember { mutableStateOf(false) }
     var isLongPressed by remember { mutableStateOf(false) }
-    var currentIndex by remember { mutableIntStateOf(index) }
     val context = LocalContext.current
+    val navigator = LocalNavigator.currentOrThrow
 
     Box(
         modifier = Modifier
@@ -260,8 +253,7 @@ fun GridItem(image: Image, index: Int, imageList: List<Image>) {
                         isLongPressed = false
                     },
                     onTap = {
-                        isFullScreen = true
-                        currentIndex = index
+                        navigator.push(FullScreenImagePager(imageList, index))
                     }
                 )
 
@@ -304,13 +296,6 @@ fun GridItem(image: Image, index: Int, imageList: List<Image>) {
             )
         }
 
-        if (isFullScreen) {
-            FullScreenImagePager(
-                imageList = imageList,
-                initialPage = currentIndex
-            ) { isFullScreen = false }
-        }
-
         if (isLongPressed) {
             LongPressDialog(
                 image = image,
@@ -320,101 +305,97 @@ fun GridItem(image: Image, index: Int, imageList: List<Image>) {
     }
 }
 
+class FullScreenImagePager(
+    private val imageList: List<Image>,
+    private val initialPage: Int
+) : Screen {
 
-// fullscreen image view and swipe the image go to next image
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun FullScreenImagePager(imageList: List<Image>, initialPage: Int, onDismiss: () -> Unit) {
-    val pagerState = rememberPagerState(initialPage = initialPage) { imageList.size }
-    var showBars by remember { mutableStateOf(true) }
-    val context = LocalContext.current
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
+    override fun Content() {
+        val pagerState = rememberPagerState(initialPage = initialPage) { imageList.size }
+        var showBars by remember { mutableStateOf(true) }
+        val context = LocalContext.current
+        val navController = LocalNavigator.currentOrThrow
 
-
-    val shareLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { _ ->
-    }
-
-    val shareContent = { imageUri: Uri ->
-        val intent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "Check out this content!")
-            putExtra(Intent.EXTRA_STREAM, imageUri)
-            type = "image/*"
+        BackHandler {
+            navController.pop()
         }
-        val shareIntent = Intent.createChooser(intent, null)
-        shareLauncher.launch(shareIntent)
-    }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .fillMaxHeight()
-                .background(Color.Black)
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures { _, dragAmount ->
-                        if (dragAmount > 0) {
-                            onDismiss()
-                        }
-                    }
-                }
-        ) {
-            HorizontalPager(
-                state = pagerState
-            ) { page ->
-                var isZoomable by remember { mutableStateOf(false) }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable {
-                            isZoomable = !isZoomable
-                            showBars = !showBars
-                        }
-                ) {
-                    if (isZoomable) {
-                        ZoomableAsyncImage(
-                            imageUrl = imageList[page].data,
-                            contentDescription = null
-                        )
-                    } else {
-                        AsyncImage(
-                            model = imageList[page].data,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
+        val shareLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult()
+        ) { }
+
+        val shareContent = { imageUri: Uri ->
+            val intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, "Check out this content!")
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                type = "image/*"
             }
+            val shareIntent = Intent.createChooser(intent, null)
+            shareLauncher.launch(shareIntent)
+        }
 
-            if (showBars) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    val title = imageList[pagerState.currentPage].data.let { path ->
-                        path.substring(path.lastIndexOf("/") + 1)
-                    }
-
-                    CustomTopBar(title)
-                    Spacer(modifier = Modifier.weight(1f)) // This ensures the bottom bar is at the bottom
-
-                    CustomBottomBar(
-                        onShareClick = {
-                            val currentPage = pagerState.currentPage
-                            val imageUri =
-                                getImageUriFromPath(context, imageList[currentPage].data)
-                            if (imageUri != null) {
-                                shareContent(imageUri)
+        MyApplicationTheme(true) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black)
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .fillMaxSize()
+                    .fillMaxHeight()
+            ) {
+                HorizontalPager(
+                    state = pagerState
+                ) { page ->
+                    var isZoomable by remember { mutableStateOf(false) }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable {
+                                isZoomable = !isZoomable
+                                showBars = !showBars
                             }
+                    ) {
+                        if (isZoomable) {
+                            ZoomableAsyncImage(
+                                imageUrl = imageList[page].data,
+                                contentDescription = null
+                            )
+                        } else {
+                            AsyncImage(
+                                model = imageList[page].data,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
-                    )
+                    }
+                }
+
+                if (showBars) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val title = imageList[pagerState.currentPage].data.let { path ->
+                            path.substring(path.lastIndexOf("/") + 1)
+                        }
+
+                        CustomTopBar(title)
+                        Spacer(modifier = Modifier.weight(1f))
+                        CustomBottomBar(
+                            onShareClick = {
+                                val currentPage = pagerState.currentPage
+                                val imageUri =
+                                    getImageUriFromPath(context, imageList[currentPage].data)
+                                if (imageUri != null) {
+                                    shareContent(imageUri)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -432,7 +413,7 @@ fun CustomBottomBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(Color.Black)
+            .background(Color.Transparent)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
@@ -513,15 +494,19 @@ fun ZoomableAsyncImage(imageUrl: String, contentDescription: String?) {
     val minScale = 1f
     val maxScale = 4f
     val context = LocalContext.current
-
+    val zoomDampingFactor = 0.5f
+    var targetScale by remember { mutableFloatStateOf(1f) }
+    val animatedScale by animateFloatAsState(targetValue = targetScale, label = "")
     Box(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    val newScale = (scale * zoom).coerceIn(minScale, maxScale)
+                    val adjustedZoom = 1 + (zoom - 1) * zoomDampingFactor
+                    val newScale = (scale * adjustedZoom).coerceIn(minScale, maxScale)
                     val scaleChange = newScale / scale
                     scale = newScale
+
                     offsetX = (offsetX * scaleChange + pan.x * newScale).coerceIn(
                         -(context.resources.displayMetrics.widthPixels * (newScale - 1)) / 2,
                         (context.resources.displayMetrics.widthPixels * (newScale - 1)) / 2
@@ -532,9 +517,19 @@ fun ZoomableAsyncImage(imageUrl: String, contentDescription: String?) {
                     )
                 }
             }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        targetScale = if (targetScale > 1f) 1f else 2f
+                        scale = targetScale
+                        offsetX = 0f
+                        offsetY = 0f
+                    }
+                )
+            }
             .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
+                scaleX = animatedScale,
+                scaleY = animatedScale,
                 translationX = offsetX,
                 translationY = offsetY
             )

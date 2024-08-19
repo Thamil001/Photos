@@ -45,7 +45,7 @@ object ImageResolver {
     suspend fun getThumbnail(context: Context, imageUri: Uri): Bitmap? =
         withContext(Dispatchers.IO) {
             try {
-                context.contentResolver.loadThumbnail(imageUri, Size(200, 200), null)
+                context.contentResolver.loadThumbnail(imageUri, Size(500, 500), null)
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
