@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -93,7 +94,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .displayCutoutPadding(),
                 ) {
                     AppMain()
                 }
@@ -120,6 +123,7 @@ class MainActivity : ComponentActivity() {
 }
 
 // all apps integrated
+
 @Composable
 fun AppMain() {
     TopBarIntegrated()
@@ -136,12 +140,18 @@ fun TopBarIntegrated() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Photos", color = MaterialTheme.colorScheme.primary, style = customH4TextStyle) },
+                title = {
+                    Text(
+                        "Photos",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = customH4TextStyle
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = Color.Transparent
                 )
-                
+
             )
         },
         content = { innerPadding ->
@@ -335,89 +345,80 @@ fun FullScreenImagePager(imageList: List<Image>, initialPage: Int, onDismiss: ()
         val shareIntent = Intent.createChooser(intent, null)
         shareLauncher.launch(shareIntent)
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .fillMaxHeight()
-            .fillMaxWidth()
-    ) {
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false
-            )
-        ) {
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .fillMaxHeight()
-                    .background(Color.Black)
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures { _, dragAmount ->
-                            if (dragAmount > 0) {
-                                onDismiss()
-                            }
-                        }
-                    }
-            ) {
-                HorizontalPager(
-                    state = pagerState
-                ) { page ->
-                    var isZoomable by remember { mutableStateOf(false) }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable {
-                                isZoomable = !isZoomable
-                                showBars = !showBars
-                            }
-                    ) {
-                        if (isZoomable) {
-                            ZoomableAsyncImage(
-                                imageUrl = imageList[page].data,
-                                contentDescription = null
-                            )
-                        } else {
-                            AsyncImage(
-                                model = imageList[page].data,
-                                contentDescription = null,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxSize()
-                            )
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .fillMaxHeight()
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { _, dragAmount ->
+                        if (dragAmount > 0) {
+                            onDismiss()
                         }
                     }
                 }
-
-                if (showBars) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val title = imageList[pagerState.currentPage].data.let { path ->
-                            path.substring(path.lastIndexOf("/") + 1)
+        ) {
+            HorizontalPager(
+                state = pagerState
+            ) { page ->
+                var isZoomable by remember { mutableStateOf(false) }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable {
+                            isZoomable = !isZoomable
+                            showBars = !showBars
                         }
-
-                        CustomTopBar(title)
-                        Spacer(modifier = Modifier.weight(1f)) // This ensures the bottom bar is at the bottom
-
-                        CustomBottomBar(
-                            onShareClick = {
-                                val currentPage = pagerState.currentPage
-                                val imageUri =
-                                    getImageUriFromPath(context, imageList[currentPage].data)
-                                if (imageUri != null) {
-                                    shareContent(imageUri)
-                                }
-                            }
+                ) {
+                    if (isZoomable) {
+                        ZoomableAsyncImage(
+                            imageUrl = imageList[page].data,
+                            contentDescription = null
+                        )
+                    } else {
+                        AsyncImage(
+                            model = imageList[page].data,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
             }
+
+            if (showBars) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val title = imageList[pagerState.currentPage].data.let { path ->
+                        path.substring(path.lastIndexOf("/") + 1)
+                    }
+
+                    CustomTopBar(title)
+                    Spacer(modifier = Modifier.weight(1f)) // This ensures the bottom bar is at the bottom
+
+                    CustomBottomBar(
+                        onShareClick = {
+                            val currentPage = pagerState.currentPage
+                            val imageUri =
+                                getImageUriFromPath(context, imageList[currentPage].data)
+                            if (imageUri != null) {
+                                shareContent(imageUri)
+                            }
+                        }
+                    )
+                }
+            }
         }
-
     }
-
 
 }
 

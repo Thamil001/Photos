@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.theme
 
+import android.app.Dialog
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -109,3 +110,4 @@ fun MyApplicationTheme(
         content = content
     )
 }
+
